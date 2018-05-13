@@ -60,12 +60,14 @@ commit_toolstate_change() {
     OLDFLAGS="$-"
     set -eu
 
+    BRANCH=test
+
     git config --global user.email '7378925+rust-toolstate-update@users.noreply.github.com'
     git config --global user.name 'Rust Toolstate Update'
     git config --global credential.helper store
     printf 'https://%s:x-oauth-basic@github.com\n' "$TOOLSTATE_REPO_ACCESS_TOKEN" \
         > "$HOME/.git-credentials"
-    git clone --depth=1 https://github.com/rust-lang-nursery/rust-toolstate.git
+    git clone --depth=1 https://github.com/rust-lang-nursery/rust-toolstate.git -b $BRANCH
 
     cd rust-toolstate
     FAILURE=1
@@ -77,10 +79,10 @@ commit_toolstate_change() {
         FAILURE=0
         git commit -a -F "$MESSAGE_FILE" || break
         # On failure randomly sleep for 0 to 3 seconds as a crude way to introduce jittering.
-        git push origin master && break || sleep $(LC_ALL=C tr -cd 0-3 < /dev/urandom | head -c 1)
+        git push origin $BRANCH && break || sleep $(LC_ALL=C tr -cd 0-3 < /dev/urandom | head -c 1)
         FAILURE=1
-        git fetch origin master
-        git reset --hard origin/master
+        git fetch origin $BRANCH
+        git reset --hard origin/$BRANCH
     done
     cd ..
 
